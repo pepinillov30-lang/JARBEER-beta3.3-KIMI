@@ -34,7 +34,7 @@ export function Documents() {
       batch: batch.batch,
       recipe: batch.recipe,
       brewer: batch.brewer,
-      startDate: template?.startDate ?? batch.batch,
+      startDate: template?.startDate ?? '—',
       volume: batch.volume,
       alcohol: batch.abv,
       color: template?.color ?? '—',
