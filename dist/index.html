@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>J.A.R.B.E.E.R. OS · Beta 3.3-JF</title>
+    <meta name="theme-color" content="#020408" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/jarbeer-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/jarbeer-icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script type="module" crossorigin src="/assets/index-IwDgHtaE.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-viz-CqML6096.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-D9lQHMz1.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {
+            // Registro silencioso: si falla, la app sigue funcionando online sin caché offline.
+          });
+        });
+      }
+    </script>
+  </body>
+</html>
