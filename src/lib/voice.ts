@@ -1,5 +1,6 @@
 // ─────────────────────────────────────────────────────────
 // Voz — reconocimiento real (Web Speech API) y síntesis cinematográfica
+// Motor de voz femenina tipo "J.A.R.V.I.S." para asistente de fábrica
 // ─────────────────────────────────────────────────────────
 
 export type SpeechRecognitionResultHandler = (transcript: string, isFinal: boolean) => void;
@@ -99,33 +100,66 @@ export function stopListening(): void {
 }
 
 // ─────────────────────────────────────────────────────────
-// Síntesis de voz — femenina, cálida, pausada pero no robótica
+// SINTESIS DE VOZ FEMENINA — Asistente personal de fabrica
+// Estilo: JARVIS femenina, elegante, pausada, cercana.
 // ─────────────────────────────────────────────────────────
 
 let preferredVoice: SpeechSynthesisVoice | null = null;
 let audioUnlocked = false;
 
-// Nombres de voces es-* femeninas conocidas por sonar más naturales/cálidas
-// en los principales navegadores (Chrome/Edge en Windows, macOS, Android).
-const VOZ_PREFERIDA_REGEX = /elvira|lucia|helena|monica|paulina|sabina|female|mujer|google espaÃ±ol/i;
-// Voces que suelen sonar peor (muy robóticas, "compact", masculinas marcadas)
-const VOZ_EVITAR_REGEX = /compact|novelty|whisper|jorge|diego|juan|pablo|male|hombre/i;
+// === SCORING DE VOCES ===
+// Priorizamos voces que suenen mas naturales y femeninas.
+// Orden: voces premium de Google/Apple/Microsoft > voces nativas del SO > resto.
+
+const VOZ_PREMIUM_FEMENINA = /google español|samsung|microsoft.*español.*female|microsoft.*elena|microsoft.*laura|microsoft.*helena|samantha|monica|paulina|camila|valentina|isabella|female.*es/i;
+const VOZ_NATIVA_FEMENINA = /elvira|lucia|helena|monica|paulina|sabina|maria|carmen|ana|female|mujer/i;
+const VOZ_MASCULINA_O_MALA = /compact|novelty|whisper|jorge|diego|juan|pablo|carlos|male|hombre/i;
+
+function scoreVoice(v: SpeechSynthesisVoice): number {
+  const name = v.name.toLowerCase();
+  let score = 0;
+
+  // Idioma exacto es-ES es oro
+  if (v.lang?.toLowerCase() === 'es-es') score += 30;
+  else if (v.lang?.toLowerCase().startsWith('es')) score += 15;
+
+  // Premium femenina (Google, Microsoft, Samsung...)
+  if (VOZ_PREMIUM_FEMENINA.test(name)) score += 50;
+  // Nativa femenina del SO
+  else if (VOZ_NATIVA_FEMENINA.test(name)) score += 25;
+
+  // Penalizar masculinas o de baja calidad
+  if (VOZ_MASCULINA_O_MALA.test(name)) score -= 100;
+  // Penalizar voces "compact" o de baja calidad
+  if (/compact|low|legacy|old/.test(name)) score -= 50;
+
+  // Bonus por voces que suelen ser muy naturales en Chrome/Edge
+  if (/google|microsoft|apple|samsung/.test(name)) score += 10;
+
+  return score;
+}
 
 function pickSpanishVoice(): SpeechSynthesisVoice | null {
   if (typeof window === 'undefined' || !window.speechSynthesis) return null;
   const voices = window.speechSynthesis.getVoices();
   if (voices.length === 0) return null;
 
-  const esES  = voices.filter(v => v.lang?.toLowerCase().startsWith('es-es'));
-  const esAny = voices.filter(v => v.lang?.toLowerCase().startsWith('es'));
-  const pool  = esES.length > 0 ? esES : esAny;
-  if (pool.length === 0) return null;
+  const esVoices = voices.filter(v => v.lang?.toLowerCase().startsWith('es'));
+  if (esVoices.length === 0) return null;
 
-  const preferida = pool.find(v => VOZ_PREFERIDA_REGEX.test(v.name) && !VOZ_EVITAR_REGEX.test(v.name));
-  if (preferida) return preferida;
+  // Ordenar por puntuacion descendente
+  const ranked = esVoices
+    .map(v => ({ voice: v, score: scoreVoice(v) }))
+    .sort((a, b) => b.score - a.score);
 
-  const noEvitar = pool.find(v => !VOZ_EVITAR_REGEX.test(v.name));
-  return noEvitar ?? pool[0];
+  // Si la mejor tiene score negativo, significa que todas son masculinas/malas.
+  // En ese caso devolvemos la primera es-ES que encontremos como fallback.
+  if (ranked[0].score < 0) {
+    const esES = voices.find(v => v.lang?.toLowerCase() === 'es-es');
+    return esES ?? esVoices[0];
+  }
+
+  return ranked[0].voice;
 }
 
 function refreshVoice() {
@@ -148,6 +182,11 @@ export function unlockSpeechSynthesis(): void {
   } catch { /* noop */ }
 }
 
+/**
+ * Reproduce texto con la voz del asistente.
+ * Configuracion optimizada para sonar como una asistente personal
+ * elegante, pausada y calida (estilo JARVIS femenina).
+ */
 export function speak(text: string, enabled: boolean = true, voiceName?: string): void {
   if (!enabled) return;
   if (typeof window === 'undefined' || !window.speechSynthesis) return;
@@ -157,6 +196,7 @@ export function speak(text: string, enabled: boolean = true, voiceName?: string)
   let voiceToUse = preferredVoice;
   if (voiceName) {
     const voices = window.speechSynthesis.getVoices();
+    // Si el usuario ha elegido una voz especifica, respetarla
     const found = voices.find(v => v.name === voiceName);
     if (found) voiceToUse = found;
   } else if (!preferredVoice) {
@@ -166,15 +206,19 @@ export function speak(text: string, enabled: boolean = true, voiceName?: string)
 
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'es-ES';
-  // Pitch/rate ajustados para sonar mÃ¡s natural y menos "robot de hace 20 aÃ±os":
-  // rate mÃ¡s cercano a 1 (velocidad normal de conversaciÃ³n) y pitch ligeramente
-  // mÃ¡s alto suaviza el timbre en muchas voces sintÃ©ticas femeninas.
-  utterance.pitch = 1.05;
-  utterance.rate = 1.02;
+
+  // === PARAMETROS DE VOZ "JARVIS FEMENINA" ===
+  // - Pitch ligeramente mas alto para timbre femenino elegante
+  // - Rate pausado (0.92) para sonar sofisticada, no robotica
+  // - Volume al maximo para claidad en entorno de fabrica
+  utterance.pitch = 1.08;
+  utterance.rate = 0.92;
   utterance.volume = 1;
+
   if (voiceToUse) utterance.voice = voiceToUse;
 
-  setTimeout(() => window.speechSynthesis.speak(utterance), 40);
+  // Pequena pausa antes de hablar para evitar cortes en moviles
+  setTimeout(() => window.speechSynthesis.speak(utterance), 60);
 }
 
 export function cancelSpeech(): void {

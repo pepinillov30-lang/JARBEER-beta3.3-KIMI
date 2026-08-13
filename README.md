@@ -1,4 +1,6 @@
-# J.A.R.B.E.E.R. OS — Beta 1.0
+# J.A.R.B.E.E.R. OS — Beta 3.3
+
+Intelligent Brewery OS — Interfaz de gestión de producción cervecera artesanal.
 
 Intelligent Brewery OS — Prototipo de interfaz para gestión de producción cervecera.
 

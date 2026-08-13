@@ -59,7 +59,7 @@ export function BootScreen({ onComplete, soundEnabled }: BootScreenProps) {
       {/* Cinematic blurred background of the brewery control room */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <img 
-          src="/src/assets/images/Dasboard Beta2.8.jpg" 
+          src="/fondo_pc.png" 
           alt="" 
           className="absolute inset-0 h-full w-full object-cover blur-md opacity-35" 
           referrerPolicy="no-referrer"
