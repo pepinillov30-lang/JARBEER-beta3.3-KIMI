@@ -4,7 +4,8 @@ import { FileText, Download, Plus, CheckCircle2, Activity, Layers } from 'lucide
 import { ScreenHeader } from '../components/ScreenHeader';
 import { GlassCard } from '../components/GlassCard';
 import { useRegistros } from '../lib/registrosState';
-import jsPDF from 'jspdf';
+import { generateProductionPdfHtml } from '../lib/pdf';
+import type { ProductionFields, MaltaItem, LupuloFichaItem } from '../lib/pdf';
 
 export function Production() {
   const { registrosProduccion, actualizarRegistroProduccion } = useRegistros();
@@ -15,22 +16,59 @@ export function Production() {
   const currentBatch = registrosProduccion.find(r => r.id === selectedId) || registrosProduccion[0];
 
   const handleExportPDF = () => {
-    const doc = new jsPDF();
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(20);
-    doc.text(`Ficha Técnica - Lote ${currentBatch.batch}`, 20, 20);
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Receta: ${currentBatch.recipe}`, 20, 35);
-    doc.text(`Maestro Cervecero: ${currentBatch.brewer}`, 20, 45);
-    doc.text(`Volumen: ${currentBatch.volume} L`, 20, 55);
-    doc.text(`Etapa: ${currentBatch.stage}`, 20, 65);
-    doc.text(`Temperatura: ${currentBatch.currentTemp} °C`, 20, 75);
-    doc.text(`Grados Plato: ${currentBatch.plato} °P`, 20, 85);
-    doc.text(`pH: ${currentBatch.ph}`, 20, 95);
-    doc.text(`Observaciones:`, 20, 110);
-    doc.text(currentBatch.observations || 'Sin observaciones.', 20, 120, { maxWidth: 170 });
-    doc.save(`Ficha_Lote_${currentBatch.batch}.pdf`);
+    if (!currentBatch) return;
+    // Generar HTML de la ficha técnica usando la plantilla profesional de pdf.ts
+    const pdfData: ProductionFields = {
+      batch: currentBatch.batch,
+      recipe: currentBatch.recipe,
+      brewer: currentBatch.brewer,
+      startDate: currentBatch.fechaInicio || '',
+      volume: currentBatch.volume ? Number(currentBatch.volume) : undefined,
+      alcohol: currentBatch.abv ? `${currentBatch.abv}%` : undefined,
+      color: undefined,
+      ibuObjetivo: undefined,
+      tempInicial: currentBatch.currentTemp ? `${currentBatch.currentTemp}°C` : undefined,
+      phMaceracion: currentBatch.ph ? String(currentBatch.ph) : undefined,
+      observations: currentBatch.observations || '',
+    };
+
+    // Datos de maltas desde la receta (mockData) — simplificado para demo
+    const maltas: MaltaItem[] = [
+      { name: 'Malta Pilsner', amount: '4.5 kg', ebc: 3, supplier: 'Briess' },
+      { name: 'Malta Munich', amount: '1.2 kg', ebc: 12, supplier: 'Briess' },
+    ];
+
+    // Datos de lúpulos desde la receta — simplificado para demo
+    const lupulos: LupuloFichaItem[] = [
+      { momento: 'Noturno 60min', variedad: 'Saaz', cantidad: '25' },
+      { momento: 'Noturno 15min', variedad: 'Saaz', cantidad: '15' },
+      { momento: 'Noturno 5min', variedad: 'Saaz', cantidad: '10' },
+    ];
+
+    const html = generateProductionPdfHtml(pdfData, maltas, lupulos);
+
+    // Abrir en nueva ventana para imprimir/guardar como PDF
+    const win = window.open('', '_blank');
+    if (!win) {
+      // Fallback: descargar como archivo HTML si popup bloqueado
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Ficha_Lote_${currentBatch.batch}.html`;
+      a.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+
+    // Auto-trigger print después de cargar
+    win.onload = () => {
+      setTimeout(() => { win.print(); }, 500);
+    };
   };
 
   const handleSaveNotes = () => {
