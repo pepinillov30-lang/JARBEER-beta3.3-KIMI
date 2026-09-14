@@ -51,10 +51,10 @@ export function BootScreen({ onComplete, soundEnabled }: BootScreenProps) {
 
   return (
     <motion.div
-      animate={exit ? { opacity:0, scale:1.05, filter:'blur(12px)' } : {}}
-      transition={{ duration:0.9, ease:[0.4,0,0.2,1] }}
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
-      style={{ background:'#020408' }}
+    animate={exit ? { opacity:0, scale:1.05, filter:'blur(12px)' } : {}}
+    transition={{ duration:0.9, ease:[0.4,0,0.2,1] }}
+    className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
+    style={{ background:'#020408' }}
     >
       {/* Cinematic blurred background of the brewery control room */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">

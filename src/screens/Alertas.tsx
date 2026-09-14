@@ -1,8 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { AlertTriangle, Bell, CheckCircle2, Clock, Key, Save, Thermometer, FlaskConical } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AlertTriangle, Bell, CheckCircle2, Clock, Key, Save, Thermometer, FlaskConical, Settings } from 'lucide-react';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { GlassCard } from '../components/GlassCard';
+import { SettingsModal } from '../components/SettingsModal';
+import type { ThemeMode } from '../components/SettingsModal';
 import { haptics } from '../lib/haptics';
 import { useRegistros } from '../lib/registrosState';
 
@@ -149,6 +151,11 @@ export function Alertas() {
       return [];
     }
   });
+  const [showSettings, setShowSettings] = useState(false);
+  const [selectedVoice, setSelectedVoice] = useState(() => localStorage.getItem('jarbeer-voice') || '');
+  const [theme, setTheme] = useState<ThemeMode>(() => {
+    try { return (localStorage.getItem('jarbeer-theme') as ThemeMode) || 'dark'; } catch { return 'dark'; }
+  });
 
   // Generar alertas dinámicas basadas en datos reales
   const dynamicAlerts = useMemo(() => {
@@ -275,6 +282,15 @@ export function Alertas() {
       <ScreenHeader
         title="Ajustes y Alertas"
         subtitle={`${activeAlerts.length} alertas activas · ${resolvedCount} resueltas`}
+        right={
+          <button
+            onClick={() => setShowSettings(true)}
+            className="flex items-center justify-center rounded-xl px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-wider transition-all"
+            style={{ background: 'rgba(255,170,0,0.08)', border: '1px solid rgba(255,170,0,0.2)', color: '#FFAA00' }}
+          >
+            <Settings size={14} /> Personalizar
+          </button>
+        }
       />
 
       <div className="space-y-6 px-4">
@@ -396,6 +412,16 @@ export function Alertas() {
           )}
         </div>
       </div>
+
+      {/* SettingsModal — dentro del Alertas para acceso rápido */}
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        selectedVoice={selectedVoice}
+        onVoiceChange={setSelectedVoice}
+        theme={theme}
+        onThemeChange={setTheme}
+      />
     </div>
   );
 }

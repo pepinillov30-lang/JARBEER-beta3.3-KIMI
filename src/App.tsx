@@ -5,6 +5,8 @@ import { BottomNav } from './components/BottomNav';
 import { TopNav } from './components/TopNav';
 import { StatusBar } from './components/StatusBar';
 import { ApiKeyModal } from './components/ApiKeyModal';
+import { MicButton } from './components/MicButton';
+import { SettingsModal } from './components/SettingsModal';
 import { BootScreen } from './screens/BootScreen';
 import { Home } from './screens/Home';
 import { WelcomeScreen } from './screens/WelcomeScreen';
@@ -22,13 +24,14 @@ import { initialChat, voiceCommands } from './data/mockData';
 import type { MicState } from './components/MicButton';
 import { playSound } from './lib/sound';
 import { haptics } from './lib/haptics';
-import { getMode, setMode as persistMode, type SystemMode } from './lib/config';
+import { getMode, setMode as persistMode, type SystemMode, applyTheme } from './lib/config';
 import { api, setMissingApiKeyHandler } from './lib/api';
 import {
   startListening, stopListening, isVoiceRecognitionAvailable,
   speak, cancelSpeech,
 } from './lib/voice';
 import { RegistrosProvider, useRegistros } from './lib/registrosState';
+import type { ThemeMode } from './components/SettingsModal';
 
 const PV = {
   initial: { opacity:0, y:14, filter:'blur(5px)' },
@@ -51,8 +54,12 @@ function AppContent() {
   const [voiceOn, setVoiceOn] = useState(true);
   const [selectedVoice, setSelectedVoice] = useState(() => localStorage.getItem('jarbeer-voice') || '');
   const [mode, setModeState]  = useState<SystemMode>(() => getMode());
+  const [theme, setTheme]     = useState<ThemeMode>(() => {
+    try { return (localStorage.getItem('jarbeer-theme') as ThemeMode) || 'dark'; } catch { return 'dark'; }
+  });
   const [showDiagnostic, setShowDiagnostic] = useState(false);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const timers                = useRef<ReturnType<typeof setTimeout>[]>([]);
   const transcriptRef         = useRef('');
 
@@ -61,8 +68,14 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('jarbeer-voice', selectedVoice);
+    try { localStorage.setItem('jarbeer-voice', selectedVoice); } catch {}
   }, [selectedVoice]);
+
+  // Tema: aplicar clase al documento cuando cambie
+  useEffect(() => {
+    try { localStorage.setItem('jarbeer-theme', theme); } catch {}
+    applyTheme(theme);
+  }, [theme]);
 
   useEffect(() => {
     return () => {
@@ -196,8 +209,9 @@ function AppContent() {
         return;
       }
       console.error("Error al invocar el asistente de Gemini:", err);
-      const errorMsg = err.message || "Error desconocido en el servidor.";
-      reply = `� � *Error de conexión con el núcleo de Gemini:*\n"${errorMsg}"\n\nSocio, parece que hay un problema al contactar con mi servidor. Si estás en modo Online, asegúrate de añadir la clave de API (**GEMINI_API_KEY**) en los Ajustes. Si prefieres trabajar de forma local y offline, puedes cambiar al modo **Búnker** haciendo clic en el selector de la barra superior.`;
+      reply = `Gemini está saturado ahora mismo, socio. Inténtalo en unos minutos.
+
+Si necesitas operar sin conexión, cambia al modo Búnker en el selector superior.`;
     }
 
     if (!usedGemini) {
@@ -235,6 +249,13 @@ function AppContent() {
       stopListening();
       setMic('idle');
       haptics.micStop();
+      return;
+    }
+    if (mic === 'responding') {
+      // Cancelar speech en curso
+      cancelSpeech();
+      setMic('idle');
+      haptics.error();
       return;
     }
     if (mic !== 'idle') return;
@@ -283,7 +304,7 @@ function AppContent() {
   }, [respondTo]);
 
   return (
-    <>
+    <div className="min-h-dvh w-full bg-[#020408] relative overflow-hidden">
       {/* Background image — full visibility */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <img
@@ -293,7 +314,6 @@ function AppContent() {
           style={{ opacity: 1 }}
           referrerPolicy="no-referrer"
         />
-        
       </div>
       <AnimatePresence>
         {!booted && <BootScreen key="boot" onComplete={()=>setBooted(true)} soundEnabled={sound}/>}
@@ -302,6 +322,14 @@ function AppContent() {
         isOpen={showApiKeyModal}
         onClose={() => setShowApiKeyModal(false)}
         onSave={() => setShowApiKeyModal(false)}
+      />
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        selectedVoice={selectedVoice}
+        onVoiceChange={setSelectedVoice}
+        theme={theme}
+        onThemeChange={setTheme}
       />
       <DiagnosticConsole isVisible={showDiagnostic} />
       {booted && !user && (
@@ -318,16 +346,17 @@ function AppContent() {
               soundEnabled={sound} onToggleSound={()=>setSound(v=>!v)}
               onOpenAssistant={()=>navigate('assistant')} alertCount={0}
               onOpenLogs={()=>navigate('logs')}
+              onOpenSettings={()=>setShowSettings(true)}
             />
             <div className="relative z-10 flex-1 overflow-hidden">
               <AnimatePresence mode="wait">
                 <motion.div key={screen} variants={PV} initial="initial" animate="animate" exit="exit" transition={PT} className="h-full">
                   {screen==='home'          && <Home micState={mic} onMic={handleMic} onNavigate={navigate} soundEnabled={sound} onToggleSound={()=>setSound(v=>!v)} mode={mode} onToggleMode={toggleMode}/>}
-                  {screen==='production'    && <Production/>}
+                  {screen==='production'    && <Production onNavigate={navigate} onMic={handleMic} />}
                   {screen==='documents'     && <Documents/>}
                   {screen==='fermentadores'  && <Fermentadores onNavigate={navigate}/>}
                   {screen==='recetas'        && <Recetas onNavigate={navigate} onSend={handleSend} />}
-                  {screen==='alertas'        && <Alertas/>}
+                  {screen==='alertas'        && <Alertas onOpenSettings={()=>setShowSettings(true)}/>}
                   {screen==='analisis'       && <Analisis/>}
                   {screen==='logs'           && <Logs/>}
                   {screen==='assistant'      && <Assistant messages={msgs} micState={mic} onMic={handleMic} onSend={handleSend} typing={typing} onNavigate={navigate} mode={mode} selectedVoice={selectedVoice} setSelectedVoice={setSelectedVoice}/>}
@@ -343,11 +372,11 @@ function AppContent() {
               <AnimatePresence mode="wait">
                 <motion.div key={screen+'-m'} variants={PV} initial="initial" animate="animate" exit="exit" transition={PT} className="min-h-full">
                   {screen==='home'          && <Home micState={mic} onMic={handleMic} onNavigate={navigate} soundEnabled={sound} onToggleSound={()=>setSound(v=>!v)} mode={mode} onToggleMode={toggleMode}/>}
-                  {screen==='production'    && <Production/>}
+                  {screen==='production'    && <Production onNavigate={navigate} onMic={handleMic} />}
                   {screen==='documents'     && <Documents/>}
                   {screen==='fermentadores'  && <Fermentadores onNavigate={navigate}/>}
                   {screen==='recetas'        && <Recetas onNavigate={navigate} onSend={handleSend} />}
-                  {screen==='alertas'        && <Alertas/>}
+                  {screen==='alertas'        && <Alertas onOpenSettings={()=>setShowSettings(true)}/>}
                   {screen==='analisis'       && <Analisis/>}
                   {screen==='logs'           && <Logs/>}
                   {screen==='assistant'      && <Assistant messages={msgs} micState={mic} onMic={handleMic} onSend={handleSend} typing={typing} onNavigate={navigate} mode={mode} selectedVoice={selectedVoice} setSelectedVoice={setSelectedVoice}/>}
@@ -358,7 +387,12 @@ function AppContent() {
           </div>
         </>
       )}
-    </>
+
+      {/* ── Mic flotante global — siempre visible, z-[9999], encima de todo ── */}
+      <div className="fixed bottom-8 right-8 z-[9999] flex flex-col items-center gap-2">
+        <MicButton state={mic} onPress={handleMic} size="large"/>
+      </div>
+    </div>
   );
 }
 

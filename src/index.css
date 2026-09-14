@@ -58,3 +58,38 @@
   }
   .field-edit:focus { border-bottom-color: rgba(0,225,255,0.8); }
 }
+
+/* ── Themes: theme-* classes applied by applyTheme() ── */
+html.theme-dark {
+  --bg-primary:    #020408;
+  --bg-glass:      rgba(17,17,17,0.55);
+  --text-primary:  #f1f1f1;
+  --text-secondary:#a0a0a0;
+  --accent:        #00e5ff;
+  --accent-2:      #0ff;
+  color-scheme:    dark;
+}
+html.theme-light {
+  --bg-primary:    #f7f9fc;
+  --bg-glass:      rgba(55,61,73,0.18);
+  --text-primary:  #1a1b21;
+  --text-secondary:#555;
+  --accent:        #0e9aa7;
+  --accent-2:      #2d9cdb;
+  color-scheme:    light;
+}
+html.theme-neon {
+  --bg-primary:    #0a0a0a;
+  --bg-glass:      rgba(255,0,255,0.12);
+  --text-primary:  #00ff88;
+  --text-secondary:#8800ff;
+  --accent:        #ff00ff;
+  --accent-2:      #00ffff;
+  color-scheme:    dark;
+}
+
+/* Aplicar los vars al fondo del body */
+body {
+  background: var(--bg-primary, #020408);
+  color: var(--text-primary, #f1f1f1);
+}

@@ -39,3 +39,18 @@ export const MODE_LABELS: Record<SystemMode, { short: string; full: string; dot:
   online: { short: 'ONLINE',  full: 'IA ONLINE — Gemini',  dot: '#34d399', color: '#34d399' },
   bunker: { short: 'BÚNKER',  full: 'IA BÚNKER — Local',    dot: '#FFAA00', color: '#FFAA00' },
 };
+
+// ── Temas visuales ──────────────────────────────────────────────────
+export const THEME_CLASSES = {
+  dark: '',
+  light: '',
+  neon: '',
+};
+
+export function applyTheme(theme: string): void {
+  const root = document.documentElement;
+  root.className = root.className.replace(/theme-\w+/g, '').trim();
+  if (theme && theme !== 'dark') {
+    root.classList.add(`theme-${theme}`);
+  }
+}
