@@ -348,9 +348,9 @@ Si necesitas operar sin conexión, cambia al modo Búnker en el selector superio
               onOpenLogs={()=>navigate('logs')}
               onOpenSettings={()=>setShowSettings(true)}
             />
-            <div className="relative z-10 flex-1 overflow-hidden">
+            <div className="relative z-10 flex-1 overflow-y-auto">
               <AnimatePresence mode="wait">
-                <motion.div key={screen} variants={PV} initial="initial" animate="animate" exit="exit" transition={PT} className="h-full">
+                <motion.div key={screen} variants={PV} initial="initial" animate="animate" exit="exit" transition={PT} className="min-h-full pb-16">
                   {screen==='home'          && <Home micState={mic} onMic={handleMic} onNavigate={navigate} soundEnabled={sound} onToggleSound={()=>setSound(v=>!v)} mode={mode} onToggleMode={toggleMode}/>}
                   {screen==='production'    && <Production onNavigate={navigate} onMic={handleMic} />}
                   {screen==='documents'     && <Documents/>}
