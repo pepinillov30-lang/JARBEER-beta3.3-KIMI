@@ -5,8 +5,6 @@ import { BottomNav } from './components/BottomNav';
 import { TopNav } from './components/TopNav';
 import { StatusBar } from './components/StatusBar';
 import { ApiKeyModal } from './components/ApiKeyModal';
-import { MicButton } from './components/MicButton';
-import { SettingsModal } from './components/SettingsModal';
 import { BootScreen } from './screens/BootScreen';
 import { Home } from './screens/Home';
 import { WelcomeScreen } from './screens/WelcomeScreen';
@@ -19,6 +17,9 @@ import { Alertas } from './screens/Alertas';
 import { Analisis } from './screens/Analisis';
 import { Logs } from './screens/Logs';
 import { DiagnosticConsole } from './components/DiagnosticConsole';
+import { SettingsModal } from './components/SettingsModal';
+import { MicButton } from './components/MicButton';
+import { useIsMobile } from './lib/isMobile';
 import type { Screen, ChatMessage } from './data/mockData';
 import { initialChat, voiceCommands } from './data/mockData';
 import type { MicState } from './components/MicButton';
@@ -209,6 +210,7 @@ function AppContent() {
         return;
       }
       console.error("Error al invocar el asistente de Gemini:", err);
+      const errorMsg = err.message || "Error desconocido en el servidor.";
       reply = `Gemini está saturado ahora mismo, socio. Inténtalo en unos minutos.
 
 Si necesitas operar sin conexión, cambia al modo Búnker en el selector superior.`;
@@ -252,7 +254,6 @@ Si necesitas operar sin conexión, cambia al modo Búnker en el selector superio
       return;
     }
     if (mic === 'responding') {
-      // Cancelar speech en curso
       cancelSpeech();
       setMic('idle');
       haptics.error();
@@ -304,16 +305,17 @@ Si necesitas operar sin conexión, cambia al modo Búnker en el selector superio
   }, [respondTo]);
 
   return (
-    <div className="relative min-h-dvh w-full bg-[#020408] overflow-y-auto overflow-x-hidden">
+    <>
       {/* Background image — full visibility */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <img
           src="/fondo_pc.png"
           alt="Fondo de pantalla"
           className="absolute inset-0 h-full w-full object-cover"
-          style={{ opacity: 1, zIndex: -1 }}
+          style={{ opacity: 1 }}
           referrerPolicy="no-referrer"
         />
+        
       </div>
       <AnimatePresence>
         {!booted && <BootScreen key="boot" onComplete={()=>setBooted(true)} soundEnabled={sound}/>}
@@ -348,9 +350,9 @@ Si necesitas operar sin conexión, cambia al modo Búnker en el selector superio
               onOpenLogs={()=>navigate('logs')}
               onOpenSettings={()=>setShowSettings(true)}
             />
-            <div className="relative z-10 flex-1 overflow-y-auto">
+            <div className="relative z-10 flex-1 overflow-hidden">
               <AnimatePresence mode="wait">
-                <motion.div key={screen} variants={PV} initial="initial" animate="animate" exit="exit" transition={PT} className="min-h-full pb-6">
+                <motion.div key={screen} variants={PV} initial="initial" animate="animate" exit="exit" transition={PT} className="h-full">
                   {screen==='home'          && <Home micState={mic} onMic={handleMic} onNavigate={navigate} soundEnabled={sound} onToggleSound={()=>setSound(v=>!v)} mode={mode} onToggleMode={toggleMode}/>}
                   {screen==='production'    && <Production onNavigate={navigate} onMic={handleMic} />}
                   {screen==='documents'     && <Documents/>}
@@ -368,7 +370,7 @@ Si necesitas operar sin conexión, cambia al modo Búnker en el selector superio
 
           {/* ── Mobile layout: BottomNav ── */}
           <div className="md:hidden relative mx-auto flex h-[100dvh] max-w-2xl flex-col">
-            <div className="relative z-10 flex-1 overflow-y-auto pb-[70px]">
+            <div className="relative z-10 flex-1 overflow-y-auto">
               <AnimatePresence mode="wait">
                 <motion.div key={screen+'-m'} variants={PV} initial="initial" animate="animate" exit="exit" transition={PT} className="min-h-full">
                   {screen==='home'          && <Home micState={mic} onMic={handleMic} onNavigate={navigate} soundEnabled={sound} onToggleSound={()=>setSound(v=>!v)} mode={mode} onToggleMode={toggleMode}/>}
@@ -388,11 +390,11 @@ Si necesitas operar sin conexión, cambia al modo Búnker en el selector superio
         </>
       )}
 
-      {/* ── Mic flotante global — siempre visible, z-[9999], encima de todo, con safe-area ── */}
-      <div className="fixed bottom-20 right-4 z-[9999] flex flex-col items-center gap-2 md:bottom-8 md:right-8" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      {/* ── Mic flotante global — siempre visible, z-[9999] ── */}
+      <div className="pointer-events-auto fixed bottom-6 right-6 z-[9999] md:bottom-8 md:right-8" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <MicButton state={mic} onPress={handleMic} size="large"/>
       </div>
-    </div>
+    </>
   );
 }
 
