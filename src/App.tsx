@@ -304,14 +304,14 @@ Si necesitas operar sin conexión, cambia al modo Búnker en el selector superio
   }, [respondTo]);
 
   return (
-    <div className="min-h-dvh w-full bg-[#020408] relative overflow-hidden">
+    <div className="relative min-h-dvh w-full bg-[#020408] overflow-y-auto overflow-x-hidden">
       {/* Background image — full visibility */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <img
           src="/fondo_pc.png"
           alt="Fondo de pantalla"
           className="absolute inset-0 h-full w-full object-cover"
-          style={{ opacity: 1 }}
+          style={{ opacity: 1, zIndex: -1 }}
           referrerPolicy="no-referrer"
         />
       </div>
@@ -350,7 +350,7 @@ Si necesitas operar sin conexión, cambia al modo Búnker en el selector superio
             />
             <div className="relative z-10 flex-1 overflow-y-auto">
               <AnimatePresence mode="wait">
-                <motion.div key={screen} variants={PV} initial="initial" animate="animate" exit="exit" transition={PT} className="min-h-full pb-16">
+                <motion.div key={screen} variants={PV} initial="initial" animate="animate" exit="exit" transition={PT} className="min-h-full pb-6">
                   {screen==='home'          && <Home micState={mic} onMic={handleMic} onNavigate={navigate} soundEnabled={sound} onToggleSound={()=>setSound(v=>!v)} mode={mode} onToggleMode={toggleMode}/>}
                   {screen==='production'    && <Production onNavigate={navigate} onMic={handleMic} />}
                   {screen==='documents'     && <Documents/>}
@@ -368,7 +368,7 @@ Si necesitas operar sin conexión, cambia al modo Búnker en el selector superio
 
           {/* ── Mobile layout: BottomNav ── */}
           <div className="md:hidden relative mx-auto flex h-[100dvh] max-w-2xl flex-col">
-            <div className="relative z-10 flex-1 overflow-y-auto">
+            <div className="relative z-10 flex-1 overflow-y-auto pb-[70px]">
               <AnimatePresence mode="wait">
                 <motion.div key={screen+'-m'} variants={PV} initial="initial" animate="animate" exit="exit" transition={PT} className="min-h-full">
                   {screen==='home'          && <Home micState={mic} onMic={handleMic} onNavigate={navigate} soundEnabled={sound} onToggleSound={()=>setSound(v=>!v)} mode={mode} onToggleMode={toggleMode}/>}
@@ -388,8 +388,8 @@ Si necesitas operar sin conexión, cambia al modo Búnker en el selector superio
         </>
       )}
 
-      {/* ── Mic flotante global — siempre visible, z-[9999], encima de todo ── */}
-      <div className="fixed bottom-8 right-8 z-[9999] flex flex-col items-center gap-2">
+      {/* ── Mic flotante global — siempre visible, z-[9999], encima de todo, con safe-area ── */}
+      <div className="fixed bottom-20 right-4 z-[9999] flex flex-col items-center gap-2 md:bottom-8 md:right-8" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <MicButton state={mic} onPress={handleMic} size="large"/>
       </div>
     </div>
