@@ -5,6 +5,8 @@ import { BottomNav } from './components/BottomNav';
 import { TopNav } from './components/TopNav';
 import { StatusBar } from './components/StatusBar';
 import { ApiKeyModal } from './components/ApiKeyModal';
+import { SettingsModal } from './components/SettingsModal';
+import { MicButton } from './components/MicButton';
 import { BootScreen } from './screens/BootScreen';
 import { Home } from './screens/Home';
 import { WelcomeScreen } from './screens/WelcomeScreen';
@@ -17,9 +19,6 @@ import { Alertas } from './screens/Alertas';
 import { Analisis } from './screens/Analisis';
 import { Logs } from './screens/Logs';
 import { DiagnosticConsole } from './components/DiagnosticConsole';
-import { SettingsModal } from './components/SettingsModal';
-import { MicButton } from './components/MicButton';
-import { useIsMobile } from './lib/isMobile';
 import type { Screen, ChatMessage } from './data/mockData';
 import { initialChat, voiceCommands } from './data/mockData';
 import type { MicState } from './components/MicButton';
@@ -33,6 +32,7 @@ import {
 } from './lib/voice';
 import { RegistrosProvider, useRegistros } from './lib/registrosState';
 import type { ThemeMode } from './components/SettingsModal';
+import { Fragment } from 'react';
 
 const PV = {
   initial: { opacity:0, y:14, filter:'blur(5px)' },
@@ -72,7 +72,6 @@ function AppContent() {
     try { localStorage.setItem('jarbeer-voice', selectedVoice); } catch {}
   }, [selectedVoice]);
 
-  // Tema: aplicar clase al documento cuando cambie
   useEffect(() => {
     try { localStorage.setItem('jarbeer-theme', theme); } catch {}
     applyTheme(theme);
@@ -210,7 +209,6 @@ function AppContent() {
         return;
       }
       console.error("Error al invocar el asistente de Gemini:", err);
-      const errorMsg = err.message || "Error desconocido en el servidor.";
       reply = `Gemini está saturado ahora mismo, socio. Inténtalo en unos minutos.
 
 Si necesitas operar sin conexión, cambia al modo Búnker en el selector superior.`;
@@ -305,7 +303,7 @@ Si necesitas operar sin conexión, cambia al modo Búnker en el selector superio
   }, [respondTo]);
 
   return (
-    <>
+    <div className="min-h-dvh w-full bg-[#020408]">
       {/* Background image — full visibility */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <img
@@ -315,7 +313,6 @@ Si necesitas operar sin conexión, cambia al modo Búnker en el selector superio
           style={{ opacity: 1 }}
           referrerPolicy="no-referrer"
         />
-        
       </div>
       <AnimatePresence>
         {!booted && <BootScreen key="boot" onComplete={()=>setBooted(true)} soundEnabled={sound}/>}
@@ -341,7 +338,7 @@ Si necesitas operar sin conexión, cambia al modo Búnker en el selector superio
         }} />
       )}
       {booted && user && (
-        <>
+        <Fragment>
           {/* ── Desktop layout: TopNav + content + StatusBar ── */}
           <div className="hidden md:flex flex-col h-[100dvh]">
             <TopNav active={screen} onNavigate={navigate} mode={mode} onToggleMode={toggleMode}
@@ -358,7 +355,7 @@ Si necesitas operar sin conexión, cambia al modo Búnker en el selector superio
                   {screen==='documents'     && <Documents/>}
                   {screen==='fermentadores'  && <Fermentadores onNavigate={navigate}/>}
                   {screen==='recetas'        && <Recetas onNavigate={navigate} onSend={handleSend} />}
-                  {screen==='alertas'        && <Alertas onOpenSettings={()=>setShowSettings(true)}/>}
+                  {screen==='alertas'        && <Alertas/>}
                   {screen==='analisis'       && <Analisis/>}
                   {screen==='logs'           && <Logs/>}
                   {screen==='assistant'      && <Assistant messages={msgs} micState={mic} onMic={handleMic} onSend={handleSend} typing={typing} onNavigate={navigate} mode={mode} selectedVoice={selectedVoice} setSelectedVoice={setSelectedVoice}/>}
@@ -370,7 +367,7 @@ Si necesitas operar sin conexión, cambia al modo Búnker en el selector superio
 
           {/* ── Mobile layout: BottomNav ── */}
           <div className="md:hidden relative mx-auto flex h-[100dvh] max-w-2xl flex-col">
-            <div className="relative z-10 flex-1 overflow-y-auto">
+            <div className="relative z-10 flex-1 overflow-y-auto pb-[70px]">
               <AnimatePresence mode="wait">
                 <motion.div key={screen+'-m'} variants={PV} initial="initial" animate="animate" exit="exit" transition={PT} className="min-h-full">
                   {screen==='home'          && <Home micState={mic} onMic={handleMic} onNavigate={navigate} soundEnabled={sound} onToggleSound={()=>setSound(v=>!v)} mode={mode} onToggleMode={toggleMode}/>}
@@ -378,7 +375,7 @@ Si necesitas operar sin conexión, cambia al modo Búnker en el selector superio
                   {screen==='documents'     && <Documents/>}
                   {screen==='fermentadores'  && <Fermentadores onNavigate={navigate}/>}
                   {screen==='recetas'        && <Recetas onNavigate={navigate} onSend={handleSend} />}
-                  {screen==='alertas'        && <Alertas onOpenSettings={()=>setShowSettings(true)}/>}
+                  {screen==='alertas'        && <Alertas/>}
                   {screen==='analisis'       && <Analisis/>}
                   {screen==='logs'           && <Logs/>}
                   {screen==='assistant'      && <Assistant messages={msgs} micState={mic} onMic={handleMic} onSend={handleSend} typing={typing} onNavigate={navigate} mode={mode} selectedVoice={selectedVoice} setSelectedVoice={setSelectedVoice}/>}
@@ -387,14 +384,14 @@ Si necesitas operar sin conexión, cambia al modo Búnker en el selector superio
             </div>
             <BottomNav active={screen} onNavigate={navigate} soundEnabled={sound}/>
           </div>
-        </>
+        </Fragment>
       )}
 
       {/* ── Mic flotante global — siempre visible, z-[9999] ── */}
-      <div className="pointer-events-auto fixed bottom-6 right-6 z-[9999] md:bottom-8 md:right-8" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="fixed bottom-6 right-6 z-[9999] md:bottom-8 md:right-8" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <MicButton state={mic} onPress={handleMic} size="large"/>
       </div>
-    </>
+    </div>
   );
 }
 
